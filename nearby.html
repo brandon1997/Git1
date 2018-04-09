@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCz5nxMCG4BMhUgSDU8yKtASBSH9e8zYhQ&callback"
+   async defer></script>
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6BMSKT4vDkcseg6OQ560Uq08tZbz-aLc&libraries=places"></script>
+  <script type="text/javascript">
+  var myLocation,map;
+  var markers=Array();
+      window.onload=function(){
+        drawMap();
+      }
+      function drawMap(){
+        if(navigator.geolocation){
+          navigator.geolocation.getCurrentPosition(onSuccess,onError,{maximumAge:60*1000,timeout:3*60*1000,enableHighAccuracy:true});}
+        else{
+         alert("You navigator does not support geolocation");
+        }
+      }
+
+      function onSuccess(position){
+        var lat=position.coords.latitude;
+        var long=position.coords.longitude;
+        myLocation=new google.maps.LatLng(lat,long);
+        var mapOption={center:myLocation,
+                       zoom:13,
+                      mapTypeId:google.maps.MapTypeId.ROADMAP};
+        map = new google.maps.Map(document.getElementById('mapArea'),mapOption);
+      }
+      function onError(error){
+        switch (error.code) {
+          case PERMISSION_DENIED:
+            alert("Permission was denied");
+          break;
+          case POSITION_UNAVAIBLE:
+            alert("Position not vailable");
+          break;
+          case TIMEOUT:
+            alert("Timed out");
+          break;
+          default:
+          alert("unknown error");
+          break;
+        }
+      }
+      function getLocation(){
+        interest=document.getElementById('interest').value;
+        distance=document.getElementById('distance').value;
+        if(interest=="default"){
+           alert("You have select an option");
+        }else{findPlaces();}
+      }
+      function findPlaces(){
+        var request={
+          location:myLocation,
+          radius:distance,
+          type:interest
+        }
+        var service = new google.maps.places.PlacesService(map);
+        service.nearbySearch(request,createMarkers);
+      }
+      function createMarkers(response,status){
+        var latlongbounds = new google.maps.LatLngBounds();
+        if(status == google.maps.places.PlacesServiceStatus.OK){
+           clearMarkers();
+           for(var i=0;i<response.length;i++){
+              drawMarker(response[i]);
+              latlongbounds.extend(response[i].geometry.location);
+           }
+           map.fitBounds(latlongbounds);
+        }
+        else if(status==google.maps.places.placesServiceStatus.ZERO_RESULTS){
+          alert ("No results for your selection");
+        }else{alert("Sorry , some errors happened, try again");}
+      }
+      function drawMarker(obj){
+        var marker=new google.maps.Marker({
+          position:obj.geometry.location,
+          map:map
+        });
+        markers.push(marker);
+        var infoWindow= new google.maps.InfoWindow({content:'<img src='+obj.icon+'>'+obj.name+'<br> Rating :'+obj.rating+'<br> Address:'+obj.vicinity});
+        google.maps.event.addListener(marker,'click',function(){infoWindow.open(map,marker);})
+      }
+      function clearMarkers(){
+        if(markers){
+          for (i in markers){
+            markers[i].setMap(null);
+          }
+          markers=[];
+        }
+      }
+
+  </script>
+</head>
+<body>
+
+ Find
+ <select onchange="getLocation();" id="interest">
+   <option value="default">Select your interest</option>
+   <option value="bank">Bank</option>
+   <option value="restaurant">Restaurant</option>
+   <option value="parking">Parking</option>
+   <option value="doctor">Doctor</option>
+   <option value="pharmacy">Pharmacy</option>
+ </select> within
+ <select onchange="getLocation();" id="distance" >
+    <option value="500" selected>500 mts</option>
+    <option value="1000" >1 Km.</option>
+    <option value="1500" >1,5 Km.</option>
+    <option value="2000" >2 Km.</option>
+ </select>
+ <div id="mapArea" style="width:600px;height:600px;">
+
+ </div>
+
+</body>
+</html>
